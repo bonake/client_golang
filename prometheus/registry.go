@@ -398,6 +398,32 @@ func (r *Registry) Unregister(c Collector) bool {
 	return true
 }
 
+// Unregister implements Registerer.
+func (r *Registry) Exist(c Collector) (Collector) {
+	var (
+		descChan    = make(chan *Desc, capDescChan)
+		descIDs     = map[uint64]struct{}{}
+		collectorID uint64 // All desc IDs XOR'd together.
+	)
+	go func() {
+		c.Describe(descChan)
+		close(descChan)
+	}()
+	for desc := range descChan {
+		if _, exists := descIDs[desc.id]; !exists {
+			collectorID ^= desc.id
+			descIDs[desc.id] = struct{}{}
+		}
+	}
+
+	r.mtx.RLock()
+	defer r.mtx.RUnlock()
+	if c, exists := r.collectorsByID[collectorID]; !exists {
+		return c
+	}
+	return nil
+}
+
 // MustRegister implements Registerer.
 func (r *Registry) MustRegister(cs ...Collector) {
 	for _, c := range cs {
