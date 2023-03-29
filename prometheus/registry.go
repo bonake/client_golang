@@ -398,7 +398,8 @@ func (r *Registry) Unregister(c Collector) bool {
 	return true
 }
 
-// Unregister implements Registerer.
+
+// Exist implements Registerer.
 func (r *Registry) Exist(c Collector) (Collector) {
 	var (
 		descChan    = make(chan *Desc, capDescChan)
